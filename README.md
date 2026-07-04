@@ -168,35 +168,21 @@ Random seed for lasso cross-validation and bootstrap. Default is `123`.
 
 `MoRS()` returns a list with the following components:
   
-  - `results`  
-A data frame of test-set conditional `R^2` values for:
-  `base`, `trs`, `prors`, `pmrs`, `smrs`, `step`, and `lasso`.
+
+- `results`  
+  A data frame of test-set adjusted $R^2$ values for `base`, `trs`, `prors`, `pmrs`, `smrs`, `step`, and `lasso`.
 
 - `results_boot_ci`  
-A data frame containing bootstrap 95% confidence intervals for test-set conditional `R^2`.
+  A data frame containing bootstrap 95% confidence intervals for test-set adjusted $R^2$.
 
 - `results_boot_pv`  
-A data frame containing bootstrap-based p-values for key comparisons:
-- `lasso_step`
-- `lasso_best_single_omics`
-- `step_best_single_omics`
-- `lasso_base`
-- `step_base`
-- `trs_base`
-- `prors_base`
-- `pmrs_base`
-- `smrs_base`
+  A data frame containing bootstrap-based p-values for the following key comparisons: `lasso_step`, `lasso_best_single_omics`, `step_best_single_omics`, `lasso_base`, `step_base`, `trs_base`, `prors_base`, `pmrs_base`, and `smrs_base`.
 
 - `lasso_models`  
-A list of fitted `cv.glmnet` models for:
-- `trs`
-- `prors`
-- `pmrs`
-- `smrs`
-- `combined`
+  A list of fitted `cv.glmnet` models for `trs`, `prors`, `pmrs`, `smrs`, and `combined`.
 
 - `step_model`  
-The final forward stepwise `lm` model selected in the tuning dataset.
+  The final forward stepwise `lm` model selected in the tuning dataset.
 
 ## Example
 
