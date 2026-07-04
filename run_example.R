@@ -2,7 +2,7 @@
 ## 1. phenotype files contain: IID, phenotype, age, sex, PC1-PC10
 ## 2. gpf files contain: IID and genetically predicted multi-omics features
 ## 3. prs files contain: IID and candidate PRSs
-## 4. wr_cols / pp_cols / pm_cols / sm_cols must be provided as feature names
+## 4. trs_cols / prors_cols / pmrs_cols / smrs_cols must be provided as feature names
 
 ## Read the training GPF file to define omics feature groups
 gpf_train <- data.frame(
@@ -10,10 +10,10 @@ gpf_train <- data.frame(
 )
 
 ## Replace these patterns with your real column naming rules
-wr_cols <- grep("^wr_", names(gpf_train), value = TRUE)
-pp_cols <- grep("^pp_", names(gpf_train), value = TRUE)
-pm_cols <- grep("^pm_", names(gpf_train), value = TRUE)
-sm_cols <- grep("^sm_", names(gpf_train), value = TRUE)
+trs_cols <- grep("^trs_", names(gpf_train), value = TRUE)
+prors_cols <- grep("^prors_", names(gpf_train), value = TRUE)
+pmrs_cols <- grep("^pmrs_", names(gpf_train), value = TRUE)
+smrs_cols <- grep("^smrs_", names(gpf_train), value = TRUE)
 
 fit <- MoRS(
   phenotype_train_file = "data/phenotype_train.txt",
@@ -28,10 +28,10 @@ fit <- MoRS(
   covariate_cols = c("age", "sex", paste0("PC", 1:10)),
   id_col = "IID",
   n_prs_cols = 9,
-  wr_cols = wr_cols,
-  pp_cols = pp_cols,
-  pm_cols = pm_cols,
-  sm_cols = sm_cols,
+  trs_cols = trs_cols,
+  prors_cols = prors_cols,
+  pmrs_cols = pmrs_cols,
+  smrs_cols = smrs_cols,
   family = "gaussian",
   nfolds = 5,
   B = 1000,
