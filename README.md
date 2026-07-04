@@ -1,7 +1,7 @@
 # MoRS (Multi-omics Risk Score)
 
 **MoRS** is a multi-omics integration method for improving polygenic risk prediction in the absence of individual-level omics data.
-This package contains two main function: step-MoRS, which integrates single-omics scores using stepwise regression, and Lasso-MoRS, which directly models all predicted features across omics layers using LASSO regression. 
+This package contains two main functions: step-MoRS, which integrates single-omics scores using stepwise regression, and Lasso-MoRS, which directly models all predicted features across omics layers using LASSO regression. 
 
 # Tutorial
 ## Getting Started
@@ -12,50 +12,6 @@ git clone https://github.com/shanny01/MoRS.git
 # necessary R packages
 Rscript -e 'install.packages(c('data.table', 'dplyr', 'glmnet'))'
 ```
-
-## Prepare the baseline PRSs
-
-The clumping and thresholding (CT) approach was implemented using PLINK 1.9.0 with a window size of 250 kb and a linkage disequilibrium cutoff of 0.1 in the clumping step. The optimal P-value threshold was selected from a range of candidate values (1.0, 5×10-1, ⋯ , 5×10-8). PRSCS was implemented using Python 3.12.2 following the pipeline https://github.com/getian107/PRScs. The optimal global shrinkage parameter was determined from the default candidate values, 1.0, 10-2 ,10-4, and 10-6.
-
-
-## Prepare genetically predicted multi-omics features
-
-These levels were derived as a linear sum of genotype dosages weighted by effect sizes retrieved from the OmicsPred portal (www.omicspred.org; accession codes OPGS000001-OPGS017227). The calculations were implemented using the pgsc_calc pipline (https://github.com/PGScatalog/pgsc_calc), applying a default variant matching threshold of 0.75 between the weight files and target genomic data. 
-
-
-## Inputs of MoRS
-
-1. `phenotype_train_file`, `phenotype_tuning_file`, `phenotype_test_file` :
-It contains the information of IID, outcome (Y) and covariates. 
-
-2. 'gpf_train_file', 'gpf_tuning_file', 'gpf_test_file':
-It contains the information of IID and genetically predicted multi-omics features.
-
-3. 'prs_tuning_file', 'prs_test_file':
-It contains the information of IID and candidate PRSs.
-
-Note that we use the training data to select genetically predicted multi-omics features and train weights for calculating single-omics scores and Lasso-MoRS. The tuning data are used to choose the best tuning parameter in PRSs. The test data are used to assess the model performance. 
-
-## Outputs of MoRS
-
-1. `results`: 
-the adjusted $R^2$ of all competing methods.
-
-2. `results_boot.ci`: 
-95% confidence intervals of all competing methods.
-
-3. `results_boot.pv`: 
-This component containing p values by one-sided paired bootstrap Z tests for paired differences in adjusted $R^2$ between two models for comparison. 
-
-4. `lasso_model`: 
-the list containing features selected in single-omics score and Lasso-MoRS.  
-
-5. `step_model`: 
-the list containing features selected in step-MoRS. 
-
-
-
-
 
 ## File Requirements
 
