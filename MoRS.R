@@ -22,7 +22,7 @@ mors_residualize_outcome <- function(df, outcome_col, covariate_cols) {
   stats::resid(stats::lm(form, data = df))
 }
 
-mors_conditional_r2 <- function(y_resid, score) {
+mors_adjusted_r2 <- function(y_resid, score) {
   keep <- stats::complete.cases(y_resid, score)
   if (sum(keep) < 3) {
     return(NA_real_)
@@ -80,7 +80,7 @@ mors_tune_linear_model <- function(y_resid, prs_df, extra_scores = NULL, prs_col
     
     fit <- stats::lm(y ~ ., data = dat)
     pred <- stats::predict(fit, newdata = dat)
-    r2 <- mors_conditional_r2(dat$y, pred)
+    r2 <- mors_adjusted_r2(dat$y, pred)
     
     if (!is.na(r2) && r2 > best$r2) {
       best <- list(r2 = r2, prs = prs_col, fit = fit)
@@ -119,7 +119,7 @@ mors_tune_step_model <- function(y_resid, prs_df, omics_scores, prs_cols) {
     )
     
     pred <- stats::predict(step_fit, newdata = dat)
-    r2 <- mors_conditional_r2(dat$y, pred)
+    r2 <- mors_adjusted_r2(dat$y, pred)
     
     if (!is.na(r2) && r2 > best$r2) {
       best <- list(r2 = r2, prs = prs_col, fit = step_fit)
@@ -146,7 +146,7 @@ mors_bootstrap_r2 <- function(y_resid, score_list, B, seed) {
     y_b <- y_resid[idx]
     
     for (model_name in model_names) {
-      out[b, model_name] <- mors_conditional_r2(y_b, score_list[[model_name]][idx])
+      out[b, model_name] <- mors_adjusted_r2(y_b, score_list[[model_name]][idx])
     }
   }
   
@@ -163,21 +163,23 @@ mors_bootstrap_ci <- function(boot_mat) {
   )
 }
 
-mors_bootstrap_pvalue <- function(diff_vec) {
-  diff_vec <- diff_vec[is.finite(diff_vec)]
-  if (length(diff_vec) < 2) {
+
+mors_bootstrap_pvalue <- function(obs_diff, boot_diff) {
+  boot_diff <- boot_diff[is.finite(boot_diff)]
+  if (length(boot_diff) < 2 || !is.finite(obs_diff)) {
     return(NA_real_)
   }
   
-  mu <- mean(diff_vec)
-  sigma <- stats::sd(diff_vec)
+  sigma <- stats::sd(boot_diff)
   
   if (is.na(sigma) || sigma == 0) {
-    return(ifelse(mu > 0, 0, 1))
+    return(ifelse(obs_diff > 0, 0, 1))
   }
   
-  stats::pnorm(0, mean = mu, sd = sigma)
+  z <- obs_diff / sigma
+  1 - stats::pnorm(z)
 }
+
 
 mors_prepare_inputs <- function(
     phenotype_train_file,
@@ -360,26 +362,32 @@ mors_build_test_predictions <- function(tuned_models, test_prs, test_scores) {
 mors_summarize_results <- function(y_test_resid, model_scores) {
   data.frame(
     model = c("base", "trs", "prors", "pmrs", "smrs", "step", "lasso"),
-    conditional_r2 = c(
-      mors_conditional_r2(y_test_resid, model_scores$base),
-      mors_conditional_r2(y_test_resid, model_scores$trs),
-      mors_conditional_r2(y_test_resid, model_scores$prors),
-      mors_conditional_r2(y_test_resid, model_scores$pmrs),
-      mors_conditional_r2(y_test_resid, model_scores$smrs),
-      mors_conditional_r2(y_test_resid, model_scores$step),
-      mors_conditional_r2(y_test_resid, model_scores$lasso)
+    adjusted_r2 = c(
+      mors_adjusted_r2(y_test_resid, model_scores$base),
+      mors_adjusted_r2(y_test_resid, model_scores$trs),
+      mors_adjusted_r2(y_test_resid, model_scores$prors),
+      mors_adjusted_r2(y_test_resid, model_scores$pmrs),
+      mors_adjusted_r2(y_test_resid, model_scores$smrs),
+      mors_adjusted_r2(y_test_resid, model_scores$step),
+      mors_adjusted_r2(y_test_resid, model_scores$lasso)
     ),
     row.names = NULL
   )
 }
+
+
 
 mors_summarize_bootstrap <- function(results, y_test_resid, model_scores, B, seed) {
   boot_mat <- mors_bootstrap_r2(y_test_resid, model_scores, B, seed)
   results_boot_ci <- mors_bootstrap_ci(boot_mat)
   
   single_omics_models <- c("trs", "prors", "pmrs", "smrs")
-  single_omics_r2 <- results$conditional_r2[match(single_omics_models, results$model)]
+  single_omics_r2 <- results$adjusted_r2[match(single_omics_models, results$model)]
   single_omics_best <- single_omics_models[which.max(single_omics_r2)]
+  
+  get_r2 <- function(model_name) {
+    results$adjusted_r2[match(model_name, results$model)]
+  }
   
   results_boot_pv <- data.frame(
     comparison = c(
@@ -394,15 +402,42 @@ mors_summarize_bootstrap <- function(results, y_test_resid, model_scores, B, see
       "smrs_base"
     ),
     p_value = c(
-      mors_bootstrap_pvalue(boot_mat[, "lasso"] - boot_mat[, "step"]),
-      mors_bootstrap_pvalue(boot_mat[, "lasso"] - boot_mat[, single_omics_best]),
-      mors_bootstrap_pvalue(boot_mat[, "step"] - boot_mat[, single_omics_best]),
-      mors_bootstrap_pvalue(boot_mat[, "lasso"] - boot_mat[, "base"]),
-      mors_bootstrap_pvalue(boot_mat[, "step"] - boot_mat[, "base"]),
-      mors_bootstrap_pvalue(boot_mat[, "trs"] - boot_mat[, "base"]),
-      mors_bootstrap_pvalue(boot_mat[, "prors"] - boot_mat[, "base"]),
-      mors_bootstrap_pvalue(boot_mat[, "pmrs"] - boot_mat[, "base"]),
-      mors_bootstrap_pvalue(boot_mat[, "smrs"] - boot_mat[, "base"])
+      mors_bootstrap_pvalue(
+        obs_diff = get_r2("lasso") - get_r2("step"),
+        boot_diff = boot_mat[, "lasso"] - boot_mat[, "step"]
+      ),
+      mors_bootstrap_pvalue(
+        obs_diff = get_r2("lasso") - get_r2(single_omics_best),
+        boot_diff = boot_mat[, "lasso"] - boot_mat[, single_omics_best]
+      ),
+      mors_bootstrap_pvalue(
+        obs_diff = get_r2("step") - get_r2(single_omics_best),
+        boot_diff = boot_mat[, "step"] - boot_mat[, single_omics_best]
+      ),
+      mors_bootstrap_pvalue(
+        obs_diff = get_r2("lasso") - get_r2("base"),
+        boot_diff = boot_mat[, "lasso"] - boot_mat[, "base"]
+      ),
+      mors_bootstrap_pvalue(
+        obs_diff = get_r2("step") - get_r2("base"),
+        boot_diff = boot_mat[, "step"] - boot_mat[, "base"]
+      ),
+      mors_bootstrap_pvalue(
+        obs_diff = get_r2("trs") - get_r2("base"),
+        boot_diff = boot_mat[, "trs"] - boot_mat[, "base"]
+      ),
+      mors_bootstrap_pvalue(
+        obs_diff = get_r2("prors") - get_r2("base"),
+        boot_diff = boot_mat[, "prors"] - boot_mat[, "base"]
+      ),
+      mors_bootstrap_pvalue(
+        obs_diff = get_r2("pmrs") - get_r2("base"),
+        boot_diff = boot_mat[, "pmrs"] - boot_mat[, "base"]
+      ),
+      mors_bootstrap_pvalue(
+        obs_diff = get_r2("smrs") - get_r2("base"),
+        boot_diff = boot_mat[, "smrs"] - boot_mat[, "base"]
+      )
     ),
     row.names = NULL
   )
