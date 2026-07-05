@@ -176,7 +176,7 @@ Random seed for lasso cross-validation and bootstrap. Default is `123`.
   A data frame containing bootstrap 95% confidence intervals for test-set adjusted $R^2$.
 
 - `results_boot_pv`  
-  A data frame containing bootstrap-based p-values for the following key comparisons: `lasso_step`, `lasso_best_single_omics`, `step_best_single_omics`, `lasso_base`, `step_base`, `trs_base`, `prors_base`, `pmrs_base`, and `smrs_base`.
+  A data frame containing bootstrap-based p-values for the following key comparisons: `lasso_step`, `lasso_best_single_omics`, `step_best_single_omics`, `lasso_base`, and `step_base`.
 
 - `lasso_models`  
   A list of fitted `cv.glmnet` models for `trs`, `prors`, `pmrs`, `smrs`, and `combined`.

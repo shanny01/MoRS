@@ -395,11 +395,7 @@ mors_summarize_bootstrap <- function(results, y_test_resid, model_scores, B, see
       "lasso_best_single_omics",
       "step_best_single_omics",
       "lasso_base",
-      "step_base",
-      "trs_base",
-      "prors_base",
-      "pmrs_base",
-      "smrs_base"
+      "step_base"
     ),
     p_value = c(
       mors_bootstrap_pvalue(
@@ -421,22 +417,6 @@ mors_summarize_bootstrap <- function(results, y_test_resid, model_scores, B, see
       mors_bootstrap_pvalue(
         obs_diff = get_r2("step") - get_r2("base"),
         boot_diff = boot_mat[, "step"] - boot_mat[, "base"]
-      ),
-      mors_bootstrap_pvalue(
-        obs_diff = get_r2("trs") - get_r2("base"),
-        boot_diff = boot_mat[, "trs"] - boot_mat[, "base"]
-      ),
-      mors_bootstrap_pvalue(
-        obs_diff = get_r2("prors") - get_r2("base"),
-        boot_diff = boot_mat[, "prors"] - boot_mat[, "base"]
-      ),
-      mors_bootstrap_pvalue(
-        obs_diff = get_r2("pmrs") - get_r2("base"),
-        boot_diff = boot_mat[, "pmrs"] - boot_mat[, "base"]
-      ),
-      mors_bootstrap_pvalue(
-        obs_diff = get_r2("smrs") - get_r2("base"),
-        boot_diff = boot_mat[, "smrs"] - boot_mat[, "base"]
       )
     ),
     row.names = NULL
